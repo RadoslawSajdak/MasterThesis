@@ -1,0 +1,11 @@
+version: "3.1"
+services:
+  nrf-box-2.7.0:
+    container_name: nrf-box-2.7.0
+    restart: on-failure
+    build:
+      context: .
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./PROJECTS/:/home/devbox/nrf-env/PROJECTS/
+
