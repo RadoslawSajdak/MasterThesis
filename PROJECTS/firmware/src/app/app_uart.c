@@ -20,18 +20,17 @@
 /*                                   PRIVATE FUNCTION DEFINITIONS                                 */
 static void uart_thread(void *unused_0, void *unused_1, void *unused_2);
 static int msg_to_code(uint8_t *msg, uint16_t len);
+static int get_epoch_from_msg(uint32_t *epoch, uint8_t *msg);
 
 /* ============================================================================================== */
 /*                                        PRIVATE VARIABLES                                       */
 static const char *msg_str[] = {
     [MSG_BOOT_DONE]                       = "BOOT",
     [MSG_START_MEASUREMENT]               = "START",
-    [MSG_START_MEASUREMENT_ACK]           = "START",
     [MSG_STOP_MEASUREMENT]                = "STOP",
-    [MSG_STOP_MEASUREMENT_ACK]            = "STOP",
     [MSG_STORE_MEASUREMENT]               = "STORE",
-    [MSG_STORE_MEASUREMENT_ACK]           = "STORE",
     [MSG_POWERDOWN]                       = "POWERDOWN",
+    [MSG_EPOCH_SYNC]                      = "EPOCH",
 };
 
 static K_THREAD_DEFINE(uart_thread_id, UART_THREAD_SIZE, uart_thread, NULL, NULL, NULL,
@@ -47,66 +46,52 @@ int app_uart_write(uint8_t *msg, uint16_t len)
 __NO_RETURN static void uart_thread(void *unused_0, void *unused_1, void *unused_2)
 {
     uint8_t msg[256] = {0};
+    uint32_t epoch;
     app_event_t event;
-    uart_msg_t msg_to_send;
+    enum uart_msg uart_msg_type;
     uart_init();
     while (1)
     {
         if (0 == uart_wait_for_msg(msg, sizeof(msg), K_FOREVER));
-
         LOG_DBG("MSG: %s", msg);
-        switch (msg_to_code(msg, sizeof(msg)))
+        uart_msg_type = msg_to_code(msg, sizeof(msg));
+        if (uart_msg_type == MSG_EPOCH_SYNC)
         {
-            case MSG_BOOT_DONE:
-                LOG_DBG("MSG BOOT DONE");
-                msg_to_send.msg_type = MSG_BOOT_DONE;
-                event.event = APP_EVENT_UART;
-                event.data = &msg_to_send;
-                app_event_submit(event);
-                break;
-
-            case MSG_START_MEASUREMENT:
-                LOG_DBG("MSG START MEASUREMENT");
-                msg_to_send.msg_type = MSG_START_MEASUREMENT;
-                event.event = APP_EVENT_UART;
-                memcpy(msg_to_send.payload, msg + sizeof("START"), sizeof("OK"));
-                event.data = &msg_to_send;
-                app_event_submit(event);
-                break;
-
-            case MSG_START_MEASUREMENT_ACK:
-                LOG_DBG("MSG START MEASUREMENT ACK");
-                break;
-
-            case MSG_STOP_MEASUREMENT:
-                LOG_DBG("MSG STOP MEASUREMENT");
-                break;
-
-            case MSG_STOP_MEASUREMENT_ACK:
-                LOG_DBG("MSG STOP MEASUREMENT ACK");
-                break;
-
-            case MSG_STORE_MEASUREMENT:
-                LOG_DBG("MSG STORE MEASUREMENT");
-                break;
-
-            case MSG_STORE_MEASUREMENT_ACK:
-                LOG_DBG("MSG STORE MEASUREMENT ACK");
-                break;
-
-            case MSG_POWERDOWN:
-                LOG_DBG("MSG POWERDOWN");
-                break;
-
-            default:
-                LOG_WRN("Unhandled message code: %d", msg_to_code(msg, sizeof(msg)));
-        
-            }
+            event.event = APP_EVENT_EPOCH;
+            get_epoch_from_msg(&epoch, msg);
+            event.data = &epoch;
+        }
+        else
+        {
+            event.event = APP_EVENT_UART;
+            event.data = &uart_msg_type;
+        }
+        app_event_submit(event);
     }
 }
 
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */
+static int get_epoch_from_msg(uint32_t *epoch, uint8_t *msg)
+{
+    char *next = NULL;
+    char *end = NULL;
+    if (!epoch || !msg)
+        return -EINVAL;
+
+    next = memchr(msg, ',', strlen(msg));
+    if(!next)
+        return -ENOTSUP;
+    
+    next++;
+    end = memchr(next, '\n', strlen(next));
+    *end = 0;
+
+    *epoch = atoi(next);
+    return 0;
+
+}
+
 static int msg_to_code(uint8_t *msg, uint16_t len)
 {
     char *next = NULL;
@@ -122,5 +107,5 @@ static int msg_to_code(uint8_t *msg, uint16_t len)
     for (int i = 0; i < MSG_NUM; i++)
         if (0 == strncmp(msg, msg_str[i], code_len))
             return i;
-    
+    return MSG_NUM;
 }

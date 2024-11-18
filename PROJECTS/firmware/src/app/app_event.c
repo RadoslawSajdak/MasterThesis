@@ -7,6 +7,8 @@
 #include "app_uart.h"
 #include "app_event.h"
 
+#include "rtc_api.h"
+
 
 /* ============================================================================================== */
 
@@ -20,12 +22,14 @@ typedef void (*app_event_cb_t)(void * data);
 /*                                   PRIVATE FUNCTION DEFINITIONS                                 */
 static void event_thread(void *unused_0, void *unused_1, void *unused_2);
 static void uart_msg_cb(void *data);
+static void uart_epoch_update(void *data);
 
 /* ============================================================================================== */
 /*                                        PRIVATE VARIABLES                                       */
 
 static app_event_cb_t app_event[APP_EVENT_NUM] = {
     [APP_EVENT_UART] = uart_msg_cb,
+    [APP_EVENT_EPOCH]= uart_epoch_update,
 };
 
 
@@ -64,18 +68,28 @@ __NO_RETURN static void event_thread(void *unused_0, void *unused_1, void *unuse
 
 static void uart_msg_cb(void *data)
 {
-    uart_msg_t *uart_msg = (uart_msg_t *)data; 
-    LOG_DBG("Got msg %d", uart_msg->msg_type);
-    switch (uart_msg->msg_type)
+    enum uart_msg uart_msg = *(enum uart_msg *)data; 
+    LOG_DBG("Got msg %d", uart_msg);
+    switch (uart_msg)
     {
     case MSG_BOOT_DONE:
         break;
     
     case MSG_START_MEASUREMENT:
-        LOG_DBG("Measurement result %s", uart_msg->payload);
+        LOG_DBG("Measurement result %d", uart_msg);
+        break;
+    case MSG_EPOCH_SYNC:
         break;
     
     default:
         break;
     }
+}
+
+static void uart_epoch_update(void *data)
+{
+    if (!data)
+        return -EINVAL;
+
+    rtc_epoch_update(*(uint32_t *)data);
 }

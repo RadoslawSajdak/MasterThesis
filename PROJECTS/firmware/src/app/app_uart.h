@@ -14,20 +14,12 @@
 enum uart_msg{
     MSG_BOOT_DONE,
     MSG_START_MEASUREMENT,
-    MSG_START_MEASUREMENT_ACK,
     MSG_STOP_MEASUREMENT,
-    MSG_STOP_MEASUREMENT_ACK,
     MSG_STORE_MEASUREMENT,
-    MSG_STORE_MEASUREMENT_ACK,
     MSG_POWERDOWN,
+    MSG_EPOCH_SYNC,
     MSG_NUM
 };
-
-typedef struct
-{
-    enum uart_msg msg_type;
-    char payload[32];
-}uart_msg_t;
 
 /* ============================================================================================== */
 /*                                        PUBLIC FUNCTIONS                                        */

@@ -58,7 +58,7 @@ static void gnss_event_handler(int event)
 }
 void rtc_cb_triggered(void)
 {
-    LOG_INF("RTC ALARM TRIGGERED");
+    LOG_INF("RTC ALARM TRIGGERED: %d", rtc_get_epoch());
     app_uart_write("Wakeup!\n", sizeof("Wakeup!\n"));
 }
 void main(void)

@@ -12,6 +12,7 @@
 /*                                        DEFINES/TYPEDEFS                                        */
 enum app_event{
     APP_EVENT_UART,
+    APP_EVENT_EPOCH,
 
     APP_EVENT_NUM
 };

@@ -62,12 +62,25 @@ int rtc_set_alarm_for(int seconds)
     return nrfx_rtc_cc_set(&rtc, RTC_ALARM_COMPARE, nrfx_rtc_counter_get(&rtc) + RTC_SECONDS(seconds), true);
 }
 
-int epoch_update(uint32_t new_epoch)
+int rtc_epoch_update(uint32_t new_epoch)
 {
+    static struct k_mutex epoch_mutex;
+    static bool initialized = false;
+    if (!initialized)
+        k_mutex_init(&epoch_mutex);
+
+    k_mutex_lock(&epoch_mutex, K_MSEC(1));
+
     epoch_time = new_epoch;
+
+    k_mutex_unlock(&epoch_mutex);
     return 0;
 }
 
+uint32_t rtc_get_epoch(void)
+{
+    return epoch_time;
+}
 
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */
@@ -80,7 +93,7 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
             alarm_cb();
         break;
     case RTC_EPOCH_SECONDS_COMPARE:
-        epoch_time++;
+        rtc_epoch_update(epoch_time + 1);
         nrfx_rtc_cc_set(&rtc, RTC_EPOCH_SECONDS_COMPARE, nrfx_rtc_counter_get(&rtc) + RTC_SECONDS(1), true);
     default:
         break;
