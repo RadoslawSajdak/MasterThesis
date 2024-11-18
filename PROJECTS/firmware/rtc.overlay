@@ -1,0 +1,9 @@
+/ {
+    aliases {
+        rtc0 = &rtc0;
+    };
+};
+
+&rtc0 {
+    status="okay";
+};

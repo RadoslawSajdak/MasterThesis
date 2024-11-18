@@ -1,1 +1,1 @@
-west build -b nrf9160dk_nrf9160_ns .
+west build -b nrf9160dk/nrf9160/ns . -- -DDTC_OVERLAY_FILE=rtc.overlay
