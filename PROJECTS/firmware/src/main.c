@@ -9,6 +9,7 @@
 #include <nrf_modem_gnss.h>
 
 #include "rtc_api.h"
+#include "uart_api.h"
 
 /* ============================================================================================== */
 
@@ -111,6 +112,7 @@ void main(void)
 
     rtc_init();
     rtc_set_alarm_for(7);
+    uart_init();
     while(1)
     {
         if (0 == k_msgq_get(&pvt_data_q, &pvt_data, K_FOREVER));

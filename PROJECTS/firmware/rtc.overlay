@@ -7,3 +7,11 @@
 &rtc0 {
     status="okay";
 };
+
+/ {
+    chosen {
+             /delete-property/ zephyr,shell-uart;
+             /delete-property/ zephyr,uart-mcumgr;
+             /delete-property/ zephyr,bt-mon-uart;
+    };
+};

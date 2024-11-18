@@ -71,7 +71,6 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
         break;
     case RTC_EPOCH_SECONDS_COMPARE:
         epoch_time++;
-        LOG_DBG("EPOCH: %u", epoch_time);
         nrfx_rtc_cc_set(&rtc, RTC_EPOCH_SECONDS_COMPARE, nrfx_rtc_counter_get(&rtc) + RTC_SECONDS(1), true);
     default:
         break;
