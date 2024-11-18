@@ -9,7 +9,7 @@
 #include <nrf_modem_gnss.h>
 
 #include "rtc_api.h"
-#include "uart_api.h"
+#include "app_uart.h"
 
 /* ============================================================================================== */
 
@@ -56,7 +56,11 @@ static void gnss_event_handler(int event)
             break;
     }
 }
-
+void rtc_cb_triggered(void)
+{
+    LOG_INF("RTC ALARM TRIGGERED");
+    app_uart_write("Wakeup!\n", sizeof("Wakeup!\n"));
+}
 void main(void)
 {
     int err;
@@ -111,8 +115,9 @@ void main(void)
     k_work_schedule(&gnss_work, K_NO_WAIT);
 
     rtc_init();
+    rtc_alarm_cb_register(rtc_cb_triggered);
     rtc_set_alarm_for(7);
-    uart_init();
+
     while(1)
     {
         if (0 == k_msgq_get(&pvt_data_q, &pvt_data, K_FOREVER));

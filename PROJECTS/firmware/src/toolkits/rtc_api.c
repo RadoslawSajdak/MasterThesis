@@ -24,6 +24,7 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type);
 
 static const nrfx_rtc_t rtc = NRFX_RTC_INSTANCE(0);
 static uint32_t epoch_time = 0U;
+static void (*alarm_cb)(void) = NULL;
 
 LOG_MODULE_REGISTER(RTC, LOG_LEVEL_DBG);
 /* ============================================================================================== */
@@ -48,6 +49,14 @@ int rtc_init(void)
     LOG_INF("RTC initialized and started.");
 }
 
+int rtc_alarm_cb_register( void (*cb)(void))
+{
+    if (!cb)
+        return -EINVAL;
+    alarm_cb = cb;
+    return 0;
+}
+
 int rtc_set_alarm_for(int seconds)
 {
     return nrfx_rtc_cc_set(&rtc, RTC_ALARM_COMPARE, nrfx_rtc_counter_get(&rtc) + RTC_SECONDS(seconds), true);
@@ -67,7 +76,8 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type)
     switch (int_type)
     {
     case RTC_ALARM_COMPARE:
-        LOG_DBG("RTC Alarm event triggered!");
+        if (alarm_cb)
+            alarm_cb();
         break;
     case RTC_EPOCH_SECONDS_COMPARE:
         epoch_time++;

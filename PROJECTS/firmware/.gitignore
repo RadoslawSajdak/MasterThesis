@@ -4,3 +4,8 @@
 
 # build
 /build*/
+tools
+../
+../*
+tools tools.c
+tools.*
