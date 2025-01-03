@@ -12,7 +12,7 @@
         compatible = "ti,ina239";
         reg = <0>;
         status = "okay";
-        spi-max-frequency = <1000000>; /* 1 MHz */
+        spi-max-frequency = <0x80000000UL>; /* 8 MHz */
     };
 };
 
@@ -51,7 +51,7 @@
             compatible = "zephyr,sdmmc-disk";
             status = "okay";
         };
-        spi-max-frequency = <8000000>;
+        spi-max-frequency = <0x80000000UL>;
     };
 };
 

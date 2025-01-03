@@ -25,12 +25,17 @@
 #define INA239_REG_VBUS                     (0x05)
 #define INA239_REG_DIETEMP                  (0x06)
 #define INA239_REG_CURRENT                  (0x07)
+#define INA239_REG_DIAG_ALRT                (0x0B)
+    #define INA239_ALATCH                   (1 << 15)
+    #define INA239_CNVR                     (1 << 14)
+    #define INA239_SLOW_ALERT               (1 << 13)
+    #define INA239_CNVRF                    (1 << 1)
 #define INA239_REG_DEVICE_ID                (0x3F)
     #define INA239_DEVICE_ID_VALUE          (0x2391)
 
 
 #define INA239_CS_PIN 4
-#define INA239_SHUNT_CAL_VALUE 1250
+#define INA239_SHUNT_CAL_VALUE 6000
 /* ============================================================================================== */
 /*                                   PRIVATE FUNCTION DEFINITIONS                                 */
 
@@ -47,7 +52,7 @@ static const struct spi_cs_control cs_ctrl = {
     .gpio.dt_flags = GPIO_ACTIVE_LOW
 };
 static const struct spi_config spi_cfg = {
-    .frequency = 8000000,
+    .frequency = SPIM_FREQUENCY_FREQUENCY_M8,
     .operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPHA,
     .slave = 0,
     .cs = cs_ctrl
@@ -98,23 +103,35 @@ int ina239_init(void)
         return -ENODEV;
     }
 
-    err = write_register(INA239_REG_CONFIG, INA239_REG_CONFIG_ADCRANGE);
+    err = write_register(INA239_REG_DIAG_ALRT, INA239_ALATCH | INA239_CNVR | INA239_SLOW_ALERT);
     if (err)
     {
-        LOG_ERR("Failed to update INA239_REG_CONFIG");
+        LOG_ERR("Failed to update INA239_REG_DIAG_ALRT");
         return err;
     }
 
-    err = write_register(INA239_REG_ADC_CONFIG, INA239_ADC_CONFIG_MODE(0x0e));
+    err = write_register(INA239_REG_ADC_CONFIG, INA239_ADC_CONFIG_MODE(0x0a) | INA239_ADC_CONFIG_AVG(1));
     if (err) {
         LOG_ERR("Failed to update INA239_REG_ADC_CONFIG");
         return err;
     }
 
-    err = write_register(INA239_REG_SHUNT_CAL, INA239_SHUNT_CAL(INA239_SHUNT_CAL_VALUE * 4));
-    if (err) {
-        LOG_ERR("Failed to update INA239_REG_SHUNT_CAL");
-        return err;
+    k_msleep(200);
+
+    err = read_register(INA239_REG_ADC_CONFIG, &whoami);
+    if (!err)
+    {
+        LOG_DBG("STARTUP ADC CONFIG: %#04x", whoami);
+    }
+    err = read_register(INA239_REG_CONFIG, &whoami);
+    if (!err)
+    {
+        LOG_DBG("STARTUP CONFIG: %#04x", whoami);
+    }
+    err = read_register(INA239_REG_DIAG_ALRT, &whoami);
+    if (!err)
+    {
+        LOG_DBG("STARTUP ALERT: %#04x", whoami);
     }
 
     return 0;
@@ -123,8 +140,16 @@ int ina239_init(void)
 uint16_t ina239_get_value(void)
 {
     uint16_t val = 0;
-    read_register(INA239_REG_CURRENT, &val);
-    return val;
+    int err;
+    err = read_register(INA239_REG_DIAG_ALRT, &val);
+    
+    if (val & INA239_CNVRF)
+    {
+        read_register(INA239_REG_VSHUNT, &val);
+        return val;
+    }
+    return 0;
+    
 }
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */

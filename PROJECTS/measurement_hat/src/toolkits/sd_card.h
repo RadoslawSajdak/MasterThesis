@@ -14,6 +14,7 @@
 /*                                        PUBLIC FUNCTIONS                                        */
 int sd_card_init(void);
 int sd_card_write(const uint8_t *data, uint8_t len);
+int sd_card_erase(void);
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */
 #endif
