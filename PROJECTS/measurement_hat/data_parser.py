@@ -28,9 +28,11 @@ def uint_to_current(sample):
 
 def parse_sd_data(sector_data):
     try:
+        if sector_data.startswith(b"DATA--->"):
+            print("Detected string: ", sector_data[8:].decode('utf-8').replace('\n',''))
+            return
         timestamp = struct.unpack('<I', sector_data[:4])[0]
         data = list(struct.unpack('<254H', sector_data[4:]))
-        print(f"{timestamp}, " + ", ".join(f"0x{value:04X}" for value in data[:8]))
         for i, sample in enumerate(data):
             if sample & 0x8000:
                 sample -= 0x10000
@@ -105,13 +107,16 @@ if __name__ == "__main__":
     written_sectors = struct.unpack('<I', sector_data[:4])[0]
     print("Found %d written sectors. Reading..." % (written_sectors))
 
-    for i in range(1, written_sectors):
+    for i in range(1, written_sectors + 1):
         sector = i
         
         sector_data = read_sd_sector(sd_device, sector, sector_size)
         
         if sector_data:
-            _, samples = parse_sd_data(sector_data)
+            try:
+                _, samples = parse_sd_data(sector_data)
+            except:
+                continue
             current_samples = [uint_to_current(sample) for sample in samples]            
             all_samples.extend(current_samples)
     

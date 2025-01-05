@@ -1,9 +1,10 @@
-#ifndef __SD_CARD__
-#define  __SD_CARD__
+#ifndef __UART_API_H__
+#define __UART_API_H__
+
 /* ============================================================================================== */
 /*                                            INCLUDES                                            */
 #include <zephyr/kernel.h>
-#include <stdint.h>
+
 
 /* ============================================================================================== */
 
@@ -12,10 +13,13 @@
 
 /* ============================================================================================== */
 /*                                        PUBLIC FUNCTIONS                                        */
-int sd_card_init(void);
-int sd_card_write(const uint8_t *data, uint8_t len);
-int sd_card_direct_write(const uint8_t *data, uint8_t len);
-int sd_card_erase(void);
+
+
+void uart_enable(void);
+void uart_disable(void);
+int uart_init(void);
+int uart_wait_for_msg(uint8_t *buffer, uint16_t max_len, k_timeout_t timeout);
+void uart_print(uint8_t *buf, uint16_t len);
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */
 #endif

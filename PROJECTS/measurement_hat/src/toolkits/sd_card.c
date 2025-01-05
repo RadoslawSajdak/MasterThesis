@@ -104,6 +104,27 @@ int sd_card_write(const uint8_t *data, uint8_t len)
     return 0;
 }
 
+int sd_card_direct_write(const uint8_t *data, uint8_t len)
+{
+    int err;
+    uint8_t direct_data[BLOCK_SIZE] = {0};
+    if (len > BLOCK_SIZE - 8)
+        return -EINVAL;
+    
+    snprintk(direct_data, BLOCK_SIZE, "DATA--->%u,%s", rtc_get_epoch(), data);
+    LOG_DBG("Direct write %s", direct_data);
+
+    err = disk_access_write(DISK_DRIVE_NAME, direct_data, ++sd_init_data.current_sector, 1);
+    if (err)
+        LOG_ERR("Failed to write data to SD card %d", err);
+    
+    err = disk_access_write(DISK_DRIVE_NAME, (uint8_t *)&sd_init_data, SD_SETUP_SECTOR, 1);
+    if (err)
+        LOG_ERR("Failed to write sector to SD card %d", err);
+    
+    return 0;
+}
+
 int sd_card_erase(void)
 {
     int err = 0;
@@ -140,14 +161,15 @@ void sd_upload(void *unused0, void *unused1)
         {
             ring_buf_get(&ring_buffer, data.data, EXPECTED_DATA_SIZE - sizeof(uint32_t));
             data.timestamp = rtc_get_epoch();
+
+            err = disk_access_write(DISK_DRIVE_NAME, (uint8_t *)&data, ++sd_init_data.current_sector, BLOCKS_PER_DATA);
+            if (err)
+                LOG_ERR("Failed to write data to SD card %d", err);
+            
+            sd_init_data.current_sector += BLOCKS_PER_DATA;
             err = disk_access_write(DISK_DRIVE_NAME, (uint8_t *)&sd_init_data, SD_SETUP_SECTOR, 1);
             if (err)
                 LOG_ERR("Failed to write sector to SD card %d", err);
-
-            sd_init_data.current_sector += BLOCKS_PER_DATA;
-            err = disk_access_write(DISK_DRIVE_NAME, (uint8_t *)&data, sd_init_data.current_sector, BLOCKS_PER_DATA);
-            if (err)
-                LOG_ERR("Failed to write data to SD card %d", err);
             
         }
     }
