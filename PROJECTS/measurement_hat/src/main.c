@@ -14,8 +14,8 @@
 
 /* ============================================================================================== */
 /*                                        DEFINES/TYPEDEFS                                        */
-#define ALARM_PERIOD_SECONDS 3600
-#define MAX_MEASUREMENT_TIME 180 // must be shorter than ALARM_PERIOD_SECONDS
+#define ALARM_PERIOD_SECONDS 300
+#define MAX_MEASUREMENT_TIME 120 // must be shorter than ALARM_PERIOD_SECONDS
 
 /* ============================================================================================== */
 /*                                   PRIVATE FUNCTION DEFINITIONS                                 */
@@ -133,13 +133,13 @@ static void measurement_timeout_handle(struct k_work *work)
     {
         timeout = true;
         read_set_off();
-        uart_print("STOP\n", sizeof("STOP\n"));
+        uart_print("STOP\n", sizeof("STOP"));
         return;
     }
     else
     {
         LOG_INF("RTC ALARM TRIGGERED: %u", start_timestamp);
-        uart_print("START\n", sizeof("START\n"));
+        uart_print("START\n", sizeof("START"));
         read_set_on();
         k_work_schedule(work, K_SECONDS(MAX_MEASUREMENT_TIME));
     }
