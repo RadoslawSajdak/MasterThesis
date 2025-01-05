@@ -128,10 +128,10 @@ static ssize_t data_rx(struct bt_conn *conn, const struct bt_gatt_attr *attr, co
 {
     if (len != sizeof(uint32_t))
         return 0;
-    uint8_t *data = (uint8_t *)buf;
     uint32_t new_epoch = 0U;
 
-    new_epoch = data[3] | (data[2] << 8) | (data[1] << 16) | (data[0] << 24);
+    memcpy(&new_epoch, (uint8_t *)buf, sizeof(uint32_t));
+
     if (epoch_set_cb)
         epoch_set_cb(new_epoch);
     return 0;
@@ -140,12 +140,9 @@ static ssize_t data_rx(struct bt_conn *conn, const struct bt_gatt_attr *attr, co
 static ssize_t data_tx(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
                          uint16_t len, uint16_t offset)
 {
-    uint32_t current_epoch = 0;
-    uint8_t *data = (uint8_t *)&current_epoch;
-    static uint32_t current_epoch_inverted = 0;
+    static uint32_t current_epoch = 0;
     if (epoch_get_cb)
         current_epoch = epoch_get_cb();
     
-    current_epoch_inverted = data[3] | (data[2] << 8) | (data[1] << 16) | (data[0] << 24);
-    return bt_gatt_attr_read(conn, attr, (void *)buf, (uint16_t)len, offset, &current_epoch_inverted, sizeof(current_epoch_inverted));
+    return bt_gatt_attr_read(conn, attr, (void *)buf, (uint16_t)len, offset, &current_epoch, sizeof(current_epoch));
 }

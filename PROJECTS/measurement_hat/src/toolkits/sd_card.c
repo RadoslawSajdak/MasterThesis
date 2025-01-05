@@ -8,6 +8,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/sys/ring_buffer.h>
+#include "rtc_api.h"
 
 /* ============================================================================================== */
 
@@ -137,7 +138,7 @@ void sd_upload(void *unused0, void *unused1)
         if (0 == k_sem_take(&sd_upload_sem, K_FOREVER))
         {
             ring_buf_get(&ring_buffer, data.data, EXPECTED_DATA_SIZE - sizeof(uint32_t));
-            data.timestamp++;
+            data.timestamp = rtc_get_epoch();
             err = disk_access_write(DISK_DRIVE_NAME, (uint8_t *)&sd_init_data, SD_SETUP_SECTOR, 1);
             if (err)
                 LOG_ERR("Failed to write sector to SD card %d", err);
