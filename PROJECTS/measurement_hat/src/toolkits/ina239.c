@@ -15,6 +15,8 @@
     #define INA239_REG_CONFIG_ADCRANGE      (1 << 4)    // Shunt full scale 
 #define INA239_REG_ADC_CONFIG               (0x01)
     #define INA239_ADC_CONFIG_MODE(x)       (x << 12)   // Mode from datasheet
+        #define INA239_ADC_CONFIG_MODE_OFF  (0x08)
+        #define INA239_ADC_CONFIG_MODE_VOL  (0x0a)
     #define INA239_ADC_CONFIG_VBUSCT(x)     (x << 9)    // VBus convertion time
     #define INA239_ADC_CONFIG_VSHCT(x)      (x << 6)    // Shunt conversion time
     #define INA239_ADC_CONFIG_VTCT(x)       (x << 3)    // Temperature conversion time
@@ -49,7 +51,7 @@ static const struct spi_cs_control cs_ctrl = {
     .delay = 0,
     .gpio.port = DEVICE_DT_GET(DT_NODELABEL(gpio1)),
     .gpio.pin = INA239_CS_PIN,
-    .gpio.dt_flags = GPIO_ACTIVE_LOW
+    .gpio.dt_flags = GPIO_ACTIVE_LOW | GPIO_PULL_UP
 };
 static const struct spi_config spi_cfg = {
     .frequency = SPIM_FREQUENCY_FREQUENCY_M8,
@@ -110,7 +112,7 @@ int ina239_init(void)
         return err;
     }
 
-    err = write_register(INA239_REG_ADC_CONFIG, INA239_ADC_CONFIG_MODE(0x0a) | INA239_ADC_CONFIG_AVG(1));
+    err = write_register(INA239_REG_ADC_CONFIG, INA239_ADC_CONFIG_MODE(INA239_ADC_CONFIG_MODE_OFF) | INA239_ADC_CONFIG_AVG(1));
     if (err) {
         LOG_ERR("Failed to update INA239_REG_ADC_CONFIG");
         return err;
@@ -150,6 +152,36 @@ uint16_t ina239_get_value(void)
     }
     return 0;
     
+}
+
+int ina239_power(bool on)
+{
+    int err;
+    uint16_t val = 0;
+    err = read_register(INA239_REG_ADC_CONFIG, &val);
+    if (err)
+        return -EINVAL;
+
+    if (on)
+    {
+        if (val & INA239_ADC_CONFIG_MODE_VOL)
+        {
+            LOG_DBG("Already on");
+            return 0;
+        }
+        err = write_register(INA239_REG_ADC_CONFIG, INA239_ADC_CONFIG_MODE(INA239_ADC_CONFIG_MODE_VOL) | INA239_ADC_CONFIG_AVG(1));
+        return err;
+    }
+    else
+    {
+        if (val & INA239_ADC_CONFIG_MODE_OFF)
+        {
+            LOG_DBG("Already off");
+            return 0;
+        }
+        err = write_register(INA239_REG_ADC_CONFIG, INA239_ADC_CONFIG_MODE(INA239_ADC_CONFIG_MODE_OFF));
+        return err;
+    }
 }
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */

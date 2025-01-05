@@ -22,7 +22,7 @@ static void rtc_cb_triggered(void);
 
 /* ============================================================================================== */
 /*                                        PRIVATE VARIABLES                                       */
-static ATOMIC_DEFINE(start_read, 1);
+static ATOMIC_DEFINE(reading, 1);
 static struct k_work_delayable button_hold_work;
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
@@ -77,14 +77,14 @@ int main(void)
 
     while (1) 
     {
-        while (atomic_get(start_read))
+        while (atomic_get(reading))
         {
             current_raw = ina239_get_value();
             if (current_raw)
                 sd_card_write(&current_raw, sizeof(current_raw));
             k_yield();
         }
-        k_yield();
+        k_msleep(1000);
     }
 
     return 0;
@@ -97,9 +97,11 @@ static void button_changed_callback(uint32_t button_state, uint32_t has_changed)
 {
     if ((has_changed & DK_BTN1_MSK) && (button_state & DK_BTN1_MSK))
     {
-        atomic_set(start_read, !atomic_get(start_read));
-        dk_set_led(DK_LED1, atomic_get(start_read));
-        LOG_DBG("Button\n");
+        bool new_state = !atomic_get(reading);
+        LOG_DBG("New reading state: %s", new_state ? "Reading" : "Stopped");
+        ina239_power(new_state);
+        atomic_set(reading, new_state);
+        dk_set_led(DK_LED1, new_state);
     }
     else if ((has_changed & DK_BTN2_MSK))
     {
