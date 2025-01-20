@@ -86,6 +86,7 @@ BUILD_ASSERT((sizeof(CONFIG_GNSS_SAMPLE_REFERENCE_LATITUDE) == 1 &&
 	      sizeof(CONFIG_GNSS_SAMPLE_REFERENCE_LONGITUDE) > 1),
 	     "CONFIG_GNSS_SAMPLE_REFERENCE_LATITUDE and "
 	     "CONFIG_GNSS_SAMPLE_REFERENCE_LONGITUDE must be both either set or empty");
+static void print_fix_data(struct nrf_modem_gnss_pvt_data_frame *pvt_data);
 
 /* Returns the distance between two coordinates in meters. The distance is calculated using the
  * haversine formula.
@@ -144,8 +145,8 @@ static void gnss_event_handler(int event)
 		 */
 		time_to_fix = (k_uptime_get() - fix_timestamp) / 1000;
 		k_work_schedule_for_queue(&gnss_work_q, &ttff_test_got_fix_work, K_MSEC(100));
-		k_work_schedule_for_queue(&gnss_work_q, &ttff_test_prepare_work,
-					  K_SECONDS(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL));
+		// k_work_schedule_for_queue(&gnss_work_q, &ttff_test_prepare_work,
+		// 			  K_SECONDS(CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL));
 		break;
 #endif /* CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST */
 
@@ -331,6 +332,7 @@ static void ttff_test_got_fix_work_fn(struct k_work *item)
 		LOG_INF("Time GNSS was blocked by LTE: %u", time_blocked);
 	}
 	print_distance_from_reference(&last_pvt);
+	print_fix_data(&last_pvt);
 	LOG_INF("Sleeping for %u seconds", CONFIG_GNSS_SAMPLE_MODE_TTFF_TEST_INTERVAL);
 }
 
