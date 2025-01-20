@@ -13,10 +13,10 @@
 /* ============================================================================================== */
 /*                                        PUBLIC FUNCTIONS                                        */
 
-int rtc_init(void);
-int rtc_alarm_cb_register(void (*cb)(void));
-int rtc_set_alarm_for(int seconds);
-int rtc_epoch_update(uint32_t new_epoch);
+// int rtc_init(void);
+// int rtc_alarm_cb_register(void (*cb)(void));
+// int rtc_set_alarm_for(int seconds);
+// int rtc_epoch_update(uint32_t new_epoch);
 uint32_t rtc_get_epoch(void);
 /* ============================================================================================== */
 /*                                         PRIVATE FUNCTIONS                                      */

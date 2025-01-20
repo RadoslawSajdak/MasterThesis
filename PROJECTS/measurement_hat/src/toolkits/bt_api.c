@@ -95,8 +95,8 @@ int bt_adv_start(void)
     struct bt_le_adv_param adv_param = {
         .id = BT_ID_DEFAULT,
         .options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME),
-        .interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
-        .interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
+        .interval_min = BT_GAP_PER_ADV_SLOW_INT_MIN,
+        .interval_max = BT_GAP_PER_ADV_SLOW_INT_MAX,
     };
 
     err = bt_le_adv_start(&adv_param, ad, ARRAY_SIZE(ad), NULL, 0);
@@ -121,6 +121,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
     LOG_DBG("Disconnected (reason 0x%02x)\n", reason);
+    bt_adv_start();
 }
 
 static ssize_t data_rx(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
